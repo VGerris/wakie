@@ -1,27 +1,25 @@
-<h1 align="center">👀 Wakie</h1>
+<h1 align="center">👀 CALarM</h1>
 
-<p align="center">Wakie is a cross platform (Android & iOS) experimental alarm clock built in <a href="https://reactnative.dev">React Native</a>, bootstrapped with <a href="https://expo.io/">Expo</a></p>
+<p align="center">CALarM is a cross platform (Android & iOS) experimental alarm clock built in <a href="https://reactnative.dev">React Native</a>, bootstrapped with <a href="https://expo.io/">Expo</a></p>
 
-![Wakie Mockups](./assets/screenshots/Mockup.png)
+![CALarM Mockups](./assets/screenshots/Mockup.png)
 
 ## Usage
-
-> Wakie is not stable until version 1.0. This is my first mobile application, so things may not work as expected. But that doesn't mean you can't get your hands dirty yet!
 
 clone the project
 
 ```bash
-git clone https://github.com/vickOnRails/wakie.git
+git clone https://github.com/VGerris/calarm.git
 ```
 
 cd into directory and install dependencies
 
 ```bash
-cd wakie && yarn
+cd calarm && yarn
 
 or
 
-cd wakie && npm install
+cd calarm && npm install
 ```
 
 Start the expo cli
@@ -51,4 +49,29 @@ For more extensive documentation, see the [expo documentation](https://docs.expo
 
 ## Issues
 
-- If you discover any issues, please reach out on [Twitter](https://twitter.com/vick_onrails)
+- If you discover any issues, please create a PR with a fix or an explanation of the issue.
+
+## Expo upgrade
+
+yarn global add @expo/cli
+
+npx expo upgrade
+
+## Update yarn
+
+corepack use yarn@4.9.4
+
+## Running mobile 
+
+npx expo run:ios
+npx expo run:android
+
+### Clean mobile and rebuild
+
+// rm -rf android ios
+npx expo prebuild --clean
+
+## Thorough clean
+
+rm -rf node_modules yarn.lock android ios .expo
+yarn install
