@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { Platform, StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { ThemeProvider, useTheme } from "./src/theme/ThemeContext";
 import { Clock } from "./src/components/Clock";
@@ -15,7 +16,7 @@ import * as Notifications from 'expo-notifications';
 
 function MainApp() {
   const { theme } = useTheme();
-  const { isLoading, dismissAlarm } = useAlarms();
+  const { isLoading, dismissAlarm, isAlarmFiring } = useAlarms();
   const { requestPermissions } = useNotifications();
   const [isAlarmModalVisible, setIsAlarmModalVisible] = useState(false);
   const [currentSound, setCurrentSound] = useState<any>(null);
@@ -25,20 +26,18 @@ function MainApp() {
     requestPermissions();
   }, []);
 
-  // 2. Listen for incoming notifications (foreground)
+  // 2. Listen for incoming notifications (iOS only — Android uses native alarm module)
   useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+
     const notificationReceivedSubscription = Notifications.addNotificationReceivedListener(notification => {
-      // When a notification arrives while the app is open, show the modal and play sound
       setIsAlarmModalVisible(true);
-      // Sound is now handled by the AlarmModal to prevent duplication
     });
 
     const responseReceivedSubscription = Notifications.addNotificationResponseReceivedListener(response => {
-      // When a user taps on the notification, ensure the alarm modal is shown and sound plays
       setIsAlarmModalVisible(true);
     });
 
-    // Check if the app was launched by an alarm notification while it was closed
     const checkInitialNotification = async () => {
       const lastResponse = await Notifications.getLastNotificationResponseAsync();
       if (lastResponse) {
@@ -53,14 +52,22 @@ function MainApp() {
     };
   }, []);
 
-  // 3. Handle dismissing the alarm
+  // 3. Sync alarm firing state from context to modal visibility
+  useEffect(() => {
+    if (isAlarmFiring) {
+      setIsAlarmModalVisible(true);
+    } else {
+      setIsAlarmModalVisible(false);
+    }
+  }, [isAlarmFiring]);
+
+  // 4. Handle dismissing the alarm
   const handleDismiss = async () => {
     setIsAlarmModalVisible(false);
     if (currentSound) {
       await stopAlarmSound(currentSound);
       setCurrentSound(null);
     }
-    // Clear the alarm firing state so the screen brightness returns to normal
     await dismissAlarm();
   };
 
@@ -78,12 +85,14 @@ function MainApp() {
         <AddAlarmButton />
       </View>
 
+      <SunriseOverlay />
+
+      {/* Alarm overlay rendered inside SafeAreaView — never unmounts */}
       <AlarmModal
         visible={isAlarmModalVisible}
         onClose={handleDismiss}
         onDismiss={handleDismiss}
       />
-      <SunriseOverlay />
 
       <StatusBar style={theme.isDark ? "light" : "dark"} />
     </SafeAreaView>

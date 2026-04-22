@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Alarm, SunriseSettings } from '../types/alarm';
-import { ALARM_NOTIFICATION_TASK, ALARM_FIRING_STATE_KEY } from '../tasks/alarmTask';
 import { setAudioModeAsync } from 'expo-audio';
+
+// Native alarm module (Android only, uses AlarmManager)
+const ExpoAlarm = require('@vall370/expo-alarm').default as any;
 
 type AlarmContextType = {
   alarms: Alarm[];
@@ -17,7 +19,6 @@ type AlarmContextType = {
 };
 
 const ALARMS_STORAGE_KEY = '@calarm_alarms';
-
 const ALARM_CHANNEL_ID = 'alarms';
 
 // Configure how notifications are handled when the app is in the foreground
@@ -35,17 +36,14 @@ const AlarmContext = createContext<AlarmContextType | undefined>(undefined);
 const getNextTriggerDate = (date: Date) => {
   const now = new Date();
   const trigger = new Date(date);
-  // Set trigger to today to compare times
   trigger.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
   trigger.setSeconds(0, 0);
   trigger.setMilliseconds(0);
 
-  // Add a 2-second buffer to prevent immediate firing due to execution delay
   const buffer = 2000;
   const comparisonTime = now.getTime() + buffer;
 
   if (trigger.getTime() <= comparisonTime) {
-    // If the time has already passed today, schedule for tomorrow
     trigger.setDate(trigger.getDate() + 1);
   }
   return trigger;
@@ -56,44 +54,95 @@ export function AlarmProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isAlarmFiring, setIsAlarmFiring] = useState(false);
 
-  // Configure audio session for background playback and notification categories
   useEffect(() => {
     // Configure audio session for background playback
     setAudioModeAsync({
       playsInSilentMode: true,
       shouldPlayInBackground: true,
       interruptionMode: 'mixWithOthers',
-    }).catch((error) => {
+    }).catch((error: any) => {
       console.error('Failed to configure audio session:', error);
     });
 
-    Notifications.setNotificationCategoryAsync('alarm', [
-      {
-        identifier: 'dismiss',
-        buttonTitle: 'Dismiss Alarm',
-        options: { isDestructive: true },
-      },
-    ]);
+    // Notification categories (iOS only)
+    if (Platform.OS === 'ios') {
+      Notifications.setNotificationCategoryAsync('alarm', [
+        {
+          identifier: 'dismiss',
+          buttonTitle: 'Dismiss Alarm',
+          options: { isDestructive: true },
+        },
+      ]);
+    }
+
+    // Listen for native alarm events (Android)
+    if (Platform.OS === 'android') {
+      const triggeredSub = ExpoAlarm.addListener('alarmTriggered', (event: any) => {
+        console.log('Native alarm triggered:', event);
+        setIsAlarmFiring(true);
+      });
+
+      const dismissedSub = ExpoAlarm.addListener('alarmDismissed', (event: any) => {
+        console.log('Native alarm dismissed:', event);
+        setIsAlarmFiring(false);
+      });
+
+      // AppState listener to detect when app comes to foreground
+      // This catches alarms that fired while the app was in the background
+      const appStateSub = AppState.addEventListener('change', async (nextAppState) => {
+        if (nextAppState === 'active' && !isAlarmFiring) {
+          // Check if an alarm was firing while in background
+          const firingState = await AsyncStorage.getItem('@calarm_is_alarm_firing');
+          if (firingState === 'true') {
+            setIsAlarmFiring(true);
+          }
+        }
+      });
+
+      return () => {
+        triggeredSub?.remove();
+        dismissedSub?.remove();
+        appStateSub?.remove();
+      };
+    }
+
+    // Notification listeners (iOS)
+    const notificationReceivedSub = Notifications.addNotificationReceivedListener(() => {
+      setIsAlarmFiring(true);
+    });
+
+    const responseReceivedSub = Notifications.addNotificationResponseReceivedListener(() => {
+      setIsAlarmFiring(true);
+    });
+
+    return () => {
+      notificationReceivedSub.remove();
+      responseReceivedSub.remove();
+    };
   }, []);
 
   const dismissAlarm = async () => {
     setIsAlarmFiring(false);
-    await AsyncStorage.setItem(ALARM_FIRING_STATE_KEY, 'false');
+    await AsyncStorage.setItem('@calarm_is_alarm_firing', 'false');
   };
 
   // Load alarms from storage on mount
   useEffect(() => {
     const loadAlarms = async () => {
-      // Initialize notification channel for Android
+      // Initialize notification channel for Android (fallback)
       if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync(ALARM_CHANNEL_ID, {
-          name: 'Alarms',
-          importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#FF231F7C',
-          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-          bypassDnd: true,
-        });
+        try {
+          await Notifications.setNotificationChannelAsync(ALARM_CHANNEL_ID, {
+            name: 'Alarms',
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: '#FF231F7C',
+            lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+            bypassDnd: true,
+          });
+        } catch (e) {
+          console.error('Failed to create notification channel:', e);
+        }
       }
 
       try {
@@ -105,34 +154,16 @@ export function AlarmProvider({ children }: { children: React.ReactNode }) {
           }));
           setAlarms(parsedAlarms);
 
-          // Re-schedule notifications for all existing alarms
+          // Re-schedule alarms
           for (const alarm of parsedAlarms) {
             if (alarm.isEnabled) {
-                const nextTrigger = getNextTriggerDate(alarm.time);
-                await Notifications.scheduleNotificationAsync({
-                    identifier: alarm.id,
-                    content: {
-                        title: "⏰ CALarM!",
-                        body: alarm.label || "Wake up!",
-                        sound: require('../../assets/sounds/alarm.mp3'),
-                        priority: Notifications.AndroidNotificationPriority.MAX,
-                        categoryIdentifier: 'alarm',
-                    },
-                    trigger: {
-                        type: Notifications.SchedulableTriggerInputTypes.DATE,
-                        date: nextTrigger,
-                        // @ts-ignore - channelId is supported on Android
-                        channelId: ALARM_CHANNEL_ID, 
-                    },
-                });
+              if (Platform.OS === 'android') {
+                await scheduleNativeAlarm(alarm);
+              } else {
+                await scheduleNotificationAlarm(alarm);
+              }
             }
           }
-        }
-
-        // Check if there is a pending alarm firing state from a background task
-        const firingState = await AsyncStorage.getItem(ALARM_FIRING_STATE_KEY);
-        if (firingState === 'true') {
-          setIsAlarmFiring(true);
         }
       } catch (e) {
         console.error('Failed to load alarms', e);
@@ -142,24 +173,6 @@ export function AlarmProvider({ children }: { children: React.ReactNode }) {
     };
 
     loadAlarms();
-  }, []);
-
-  // Notification Listeners
-  useEffect(() => {
-    // Handle notification when app is in foreground
-    const subscription = Notifications.addNotificationReceivedListener(_ => {
-      setIsAlarmFiring(true);
-    });
-
-    // Handle when user taps on the notification
-    const responseSubscription = Notifications.addNotificationResponseReceivedListener(_ => {
-      setIsAlarmFiring(true);
-    });
-
-    return () => {
-      subscription.remove();
-      responseSubscription.remove();
-    };
   }, []);
 
   // Save alarms to storage whenever they change
@@ -176,8 +189,45 @@ export function AlarmProvider({ children }: { children: React.ReactNode }) {
     saveAlarms();
   }, [alarms, isLoading]);
 
+  const scheduleNativeAlarm = async (alarm: Alarm) => {
+    if (!ExpoAlarm) return;
+    try {
+      await ExpoAlarm.scheduleAlarmAsync({
+        identifier: alarm.id,
+        title: alarm.label || 'Wake up!',
+        body: '⏰ CALarM!',
+        date: alarm.time.getTime(),
+        repeating: alarm.daysOfWeek.length > 0,
+      });
+    } catch (e) {
+      console.error('Failed to schedule native alarm:', e);
+    }
+  };
+
+  const scheduleNotificationAlarm = async (alarm: Alarm) => {
+    const nextTrigger = getNextTriggerDate(alarm.time);
+    try {
+      await Notifications.scheduleNotificationAsync({
+        identifier: alarm.id,
+        content: {
+          title: "⏰ CALarM!",
+          body: alarm.label || "Wake up!",
+          sound: require('../../assets/sounds/alarm.mp3'),
+          priority: Notifications.AndroidNotificationPriority.MAX,
+          categoryIdentifier: 'alarm',
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: nextTrigger,
+          channelId: ALARM_CHANNEL_ID,
+        },
+      });
+    } catch (e) {
+      console.error('Failed to schedule notification alarm:', e);
+    }
+  };
+
   const addAlarm = async (time: Date, daysOfWeek: number[] = [], label?: string, sunriseSettings?: SunriseSettings) => {
-    const nextTrigger = getNextTriggerDate(time);
     const newAlarm: Alarm = {
       id: Math.random().toString(36).substring(7),
       time,
@@ -189,26 +239,11 @@ export function AlarmProvider({ children }: { children: React.ReactNode }) {
 
     setAlarms((prev) => [...prev, newAlarm]);
 
-    // Schedule the notification
-    try {
-        await Notifications.scheduleNotificationAsync({
-            identifier: newAlarm.id,
-            content: {
-                title: "⏰ CALarM!",
-                body: label || "Wake up!",
-                sound: require('../../assets/sounds/alarm.mp3'),
-                priority: Notifications.AndroidNotificationPriority.MAX,
-                categoryIdentifier: 'alarm',
-            },
-            trigger: {
-                type: Notifications.SchedulableTriggerInputTypes.DATE,
-                date: nextTrigger,
-                // @ts-ignore
-                channelId: ALARM_CHANNEL_ID,
-            },
-        });
-    } catch (e) {
-        console.error('Failed to schedule notification', e);
+    // Schedule the alarm
+    if (Platform.OS === 'android') {
+      await scheduleNativeAlarm(newAlarm);
+    } else {
+      await scheduleNotificationAlarm(newAlarm);
     }
   };
 
@@ -222,6 +257,15 @@ export function AlarmProvider({ children }: { children: React.ReactNode }) {
 
   const removeAlarm = async (id: string) => {
     setAlarms((prev) => prev.filter((alarm) => alarm.id !== id));
+
+    // Cancel the alarm on the native side
+    if (Platform.OS === 'android' && ExpoAlarm) {
+      try {
+        await ExpoAlarm.cancelAlarmAsync(id);
+      } catch (e) {
+        console.error('Failed to cancel native alarm:', e);
+      }
+    }
   };
 
   const value = useMemo(() => ({

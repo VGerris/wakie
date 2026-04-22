@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Modal } from 'react-native';
+import { Animated, Dimensions, StyleSheet, Text, View, TouchableOpacity, Modal } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface AlarmModalProps {
   visible: boolean;
@@ -11,60 +13,99 @@ interface AlarmModalProps {
 export function AlarmModal({ visible, onClose, onDismiss }: AlarmModalProps) {
   const { theme } = useTheme();
   const [sound, setSound] = useState<any>(null);
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const pulseAnim = useState(new Animated.Value(1))[0];
 
   useEffect(() => {
     if (visible) {
-      // When the modal becomes visible, it means an alarm is firing
       const startSound = async () => {
         const s = await playAlarmSound();
         setSound(s);
       };
       startSound();
+
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.15,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
     } else {
-      // When the modal is closed, stop the sound
       if (sound) {
         stopAlarmSound(sound);
         setSound(null);
       }
+
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+
+      pulseAnim.stopAnimation();
     }
 
     return () => {
       if (sound) {
         stopAlarmSound(sound);
       }
+      pulseAnim.stopAnimation();
     };
   }, [visible]);
 
   return (
     <Modal
-      animationType="fade"
       transparent={true}
       visible={visible}
+      animationType="fade"
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+        <Animated.View
+          style={[
+            styles.glow,
+            { transform: [{ scale: pulseAnim }] },
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.card,
+            {
+              backgroundColor: theme.card,
+              opacity: fadeAnim,
+            },
+          ]}
+        >
           <Text style={[styles.title, { color: theme.text }]}>⏰ Alarm!</Text>
           <Text style={[styles.subtitle, { color: theme.text, opacity: 0.7 }]}>
             Wake up, it's time!
           </Text>
-
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: theme.primary }]}
-              onPress={onDismiss}
-            >
-              <Text style={styles.buttonText}>Dismiss</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: theme.primary }]}
+            onPress={onDismiss}
+          >
+            <Text style={styles.buttonText}>Dismiss</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </View>
     </Modal>
   );
 }
 
-// Helper functions to avoid circular imports in this example
-// In a real app, these would be imported from the hook
 import { playAlarmSound, stopAlarmSound } from '../hooks/useAudio';
 
 const styles = StyleSheet.create({
@@ -72,42 +113,46 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'transparent',
   },
-  modalContent: {
-    width: '80%',
-    padding: 30,
+  glow: {
+    position: 'absolute',
+    width: SCREEN_WIDTH * 0.45,
+    height: SCREEN_WIDTH * 0.45,
+    borderRadius: 999,
+    backgroundColor: '#ffffff',
+  },
+  card: {
+    position: 'relative',
+    zIndex: 1,
+    width: SCREEN_WIDTH * 0.35,
+    maxWidth: 300,
+    padding: 24,
     borderRadius: 20,
     alignItems: 'center',
-    // Add a subtle shadow/elevation instead of a heavy background to keep it minimalistic
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.9,
+    shadowRadius: 8,
+    elevation: 10,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 18,
-    marginBottom: 30,
-  },
-  buttonContainer: {
-    width: '100%',
+    fontSize: 16,
+    marginBottom: 24,
   },
   button: {
-    paddingVertical: 15,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
     borderRadius: 12,
-    alignItems: 'center',
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });

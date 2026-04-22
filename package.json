@@ -11,7 +11,7 @@
     "@babel/core": "^7.26.0",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.6.0",
-    "@vall370/expo-alarm": "^0.1.5",
+    "@vall370/expo-alarm": "git+https://github.com/VGerris/expo-alarm.git",
     "expo": "^55.0.0",
     "expo-asset": "~55.0.16",
     "expo-audio": "^55.0.14",
