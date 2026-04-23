@@ -177,3 +177,8 @@ NOTES:
  firebase use my-proj-in-gcp
 Now using use my-proj-in-gcp
  ```
+
+ ## Use git reference without release package.json
+
+ ➤ YN0085: │ + @vgerris/expo-alarm@https://github.com/VGerris/expo-alarm.git#commit=1662b2b6639555a974cab1b36d551954b6c0abaa
+➤ YN0085: │ - @vgerris/expo-alarm@https://github.com/VGerris/expo-alarm.git#commit=aa07156e5d0911fa992f33ea0f13a1f4fda4b0c8

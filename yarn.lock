@@ -2155,16 +2155,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vall370/expo-alarm@git+https://github.com/VGerris/expo-alarm.git":
-  version: 0.1.5
-  resolution: "@vall370/expo-alarm@https://github.com/VGerris/expo-alarm.git#commit=b247c4480f502d1bc71e64b97fae3304dc19e256"
+"@vgerris/expo-alarm@git+https://github.com/VGerris/expo-alarm.git#commit=36e49733b2e0fdea80da92aa31f0b2a3ce460507":
+  version: 0.1.6
+  resolution: "@vgerris/expo-alarm@https://github.com/VGerris/expo-alarm.git#commit=36e49733b2e0fdea80da92aa31f0b2a3ce460507"
   dependencies:
     typescript: "npm:^5.9.2"
   peerDependencies:
     expo: "*"
     react: "*"
     react-native: "*"
-  checksum: 10c0/d49e8f84e95eddc69d9502a5a172d03e5da936f87df6086b186470f7df12fde97e2df784f1a2e9314264912475481074878124b4d84d2410b63fbf22373a1453
+  checksum: 10c0/6918cedcac964d2d536fc0d178ea78221a1e9402408b36193c780785917fd1d93f0d5e505f5aa31c56c7c269c36ea6bf76e59311268b50021173765ea1726b29
   languageName: node
   linkType: hard
 
@@ -2552,11 +2552,11 @@ __metadata:
   linkType: hard
 
 "baseline-browser-mapping@npm:^2.10.12":
-  version: 2.10.20
-  resolution: "baseline-browser-mapping@npm:2.10.20"
+  version: 2.10.21
+  resolution: "baseline-browser-mapping@npm:2.10.21"
   bin:
     baseline-browser-mapping: dist/cli.cjs
-  checksum: 10c0/3d60c9656c4c4673593aa8d0ae9aa6b69b4e018c2f585874a0e8a40cb28d0559f57ee1b2e7e44cb1e7f6aac66f658a4a3c1285901b8836d8ae31e189e30aa816
+  checksum: 10c0/065d90f98099dd0d7b6e1c284f7133d0eaebf571a7ee3e9e0740862dbd64cf040f4447404269bc8b1fd4015dead68c3a026e541a214050375df6bde20706ec8b
   languageName: node
   linkType: hard
 
@@ -2679,7 +2679,7 @@ __metadata:
     "@react-native-community/datetimepicker": "npm:8.6.0"
     "@types/react": "npm:~19.2.10"
     "@types/react-dom": "npm:~19.1.7"
-    "@vall370/expo-alarm": "git+https://github.com/VGerris/expo-alarm.git"
+    "@vgerris/expo-alarm": "git+https://github.com/VGerris/expo-alarm.git#commit=36e49733b2e0fdea80da92aa31f0b2a3ce460507"
     expo: "npm:^55.0.0"
     expo-asset: "npm:~55.0.16"
     expo-audio: "npm:^55.0.14"
@@ -3061,9 +3061,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.5.328":
-  version: 1.5.343
-  resolution: "electron-to-chromium@npm:1.5.343"
-  checksum: 10c0/752f2babd9058c3da97f71fee4af97dde1ad57afb52c2e459c499508a92102bde605a2af54536c5d276c39cabe409b4d46caf8840f92db721631f39fd70c810c
+  version: 1.5.344
+  resolution: "electron-to-chromium@npm:1.5.344"
+  checksum: 10c0/36624a59b2da4cb2bdee3085f5fc814bc0ba5830162a26f45c4b189177455869fd9d9c2e05fa28e69a45fb95c04d3e995962ff0e1658f552dcbe147a731c4f1d
   languageName: node
   linkType: hard
 
@@ -5769,8 +5769,8 @@ __metadata:
   linkType: hard
 
 "terser@npm:^5.15.0":
-  version: 5.46.1
-  resolution: "terser@npm:5.46.1"
+  version: 5.46.2
+  resolution: "terser@npm:5.46.2"
   dependencies:
     "@jridgewell/source-map": "npm:^0.3.3"
     acorn: "npm:^8.15.0"
@@ -5778,7 +5778,7 @@ __metadata:
     source-map-support: "npm:~0.5.20"
   bin:
     terser: bin/terser
-  checksum: 10c0/45ba6566af976c518ff4e140250348d606761af822e23ea28d95b30fcf60fb69d3fabd93c6fafa4085d9fe31b67207e58b8480a64370b6cca07066c434101602
+  checksum: 10c0/476f1820160c42e6b2f611410115b00321c4666d421f12db87f13810f8789de45cb254e3ad5178650696d0ba6b706f5a0a239272255d6d1be95816c660f8cbbb
   languageName: node
   linkType: hard
 

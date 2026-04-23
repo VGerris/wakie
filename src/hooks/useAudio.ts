@@ -32,8 +32,7 @@ export async function stopAlarmSound(player: AudioPlayer | null) {
   if (player) {
     try {
       player.pause();
-      // In expo-audio, stopping is typically achieved by pausing
-      // and allowing the player instance to be garbage collected.
+      player.remove();
     } catch (error) {
       console.error('Error stopping alarm sound:', error);
     }

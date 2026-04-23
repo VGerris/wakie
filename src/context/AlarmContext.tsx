@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect, useRef } from 'react';
 import { AppState, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
@@ -6,7 +6,7 @@ import { Alarm, SunriseSettings } from '../types/alarm';
 import { setAudioModeAsync } from 'expo-audio';
 
 // Native alarm module (Android only, uses AlarmManager)
-const ExpoAlarm = require('@vall370/expo-alarm').default as any;
+const ExpoAlarm = require('@vgerris/expo-alarm').default as any;
 
 type AlarmContextType = {
   alarms: Alarm[];
@@ -53,6 +53,7 @@ export function AlarmProvider({ children }: { children: React.ReactNode }) {
   const [alarms, setAlarms] = useState<Alarm[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAlarmFiring, setIsAlarmFiring] = useState(false);
+  const lastFiredAlarmIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Configure audio session for background playback
@@ -79,12 +80,16 @@ export function AlarmProvider({ children }: { children: React.ReactNode }) {
     if (Platform.OS === 'android') {
       const triggeredSub = ExpoAlarm.addListener('alarmTriggered', (event: any) => {
         console.log('Native alarm triggered:', event);
+        // Ignore duplicate events from the same firing (AlarmReceiver + AlarmService both emit)
+        if (event.identifier === lastFiredAlarmIdRef.current) return;
+        lastFiredAlarmIdRef.current = event.identifier;
         setIsAlarmFiring(true);
       });
 
       const dismissedSub = ExpoAlarm.addListener('alarmDismissed', (event: any) => {
         console.log('Native alarm dismissed:', event);
         setIsAlarmFiring(false);
+        lastFiredAlarmIdRef.current = null;
       });
 
       // AppState listener to detect when app comes to foreground
@@ -122,8 +127,16 @@ export function AlarmProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const dismissAlarm = async () => {
-    setIsAlarmFiring(false);
-    await AsyncStorage.setItem('@calarm_is_alarm_firing', 'false');
+    const firingId = lastFiredAlarmIdRef.current;
+
+    // Cancel the native alarm on Android — this stops the service and cancels the scheduled alarm
+    if (Platform.OS === 'android' && ExpoAlarm && firingId) {
+      try {
+        await ExpoAlarm.cancelAlarmAsync(firingId);
+      } catch (e) {
+        console.error('Failed to cancel alarm on dismiss:', e);
+      }
+    }
   };
 
   // Load alarms from storage on mount

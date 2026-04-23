@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, StyleSheet, Text, View, TouchableOpacity, Modal } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
+import { playAlarmSound, stopAlarmSound } from '../hooks/useAudio';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -13,6 +14,7 @@ interface AlarmModalProps {
 export function AlarmModal({ visible, onClose, onDismiss }: AlarmModalProps) {
   const { theme } = useTheme();
   const [sound, setSound] = useState<any>(null);
+  const soundRef = useRef<any>(null);
   const fadeAnim = useState(new Animated.Value(0))[0];
   const pulseAnim = useState(new Animated.Value(1))[0];
 
@@ -21,6 +23,7 @@ export function AlarmModal({ visible, onClose, onDismiss }: AlarmModalProps) {
       const startSound = async () => {
         const s = await playAlarmSound();
         setSound(s);
+        soundRef.current = s;
       };
       startSound();
 
@@ -45,9 +48,10 @@ export function AlarmModal({ visible, onClose, onDismiss }: AlarmModalProps) {
         ])
       ).start();
     } else {
-      if (sound) {
-        stopAlarmSound(sound);
-        setSound(null);
+      if (soundRef.current) {
+        console.log('[AlarmModal] stopping sound');
+        stopAlarmSound(soundRef.current);
+        soundRef.current = null;
       }
 
       Animated.timing(fadeAnim, {
@@ -60,8 +64,10 @@ export function AlarmModal({ visible, onClose, onDismiss }: AlarmModalProps) {
     }
 
     return () => {
-      if (sound) {
-        stopAlarmSound(sound);
+      if (soundRef.current) {
+        console.log('[AlarmModal] cleanup: stopping sound');
+        stopAlarmSound(soundRef.current);
+        soundRef.current = null;
       }
       pulseAnim.stopAnimation();
     };
@@ -72,21 +78,16 @@ export function AlarmModal({ visible, onClose, onDismiss }: AlarmModalProps) {
       transparent={true}
       visible={visible}
       animationType="fade"
-      onRequestClose={onClose}
+      onRequestClose={() => {}}
     >
       <View style={styles.overlay}>
-        <Animated.View
-          style={[
-            styles.glow,
-            { transform: [{ scale: pulseAnim }] },
-          ]}
-        />
         <Animated.View
           style={[
             styles.card,
             {
               backgroundColor: theme.card,
               opacity: fadeAnim,
+              transform: [{ scale: pulseAnim }],
             },
           ]}
         >
@@ -106,7 +107,6 @@ export function AlarmModal({ visible, onClose, onDismiss }: AlarmModalProps) {
   );
 }
 
-import { playAlarmSound, stopAlarmSound } from '../hooks/useAudio';
 
 const styles = StyleSheet.create({
   overlay: {
@@ -114,13 +114,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'transparent',
-  },
-  glow: {
-    position: 'absolute',
-    width: SCREEN_WIDTH * 0.45,
-    height: SCREEN_WIDTH * 0.45,
-    borderRadius: 999,
-    backgroundColor: '#ffffff',
   },
   card: {
     position: 'relative',
