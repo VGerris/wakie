@@ -129,12 +129,28 @@ export function AlarmProvider({ children }: { children: React.ReactNode }) {
   const dismissAlarm = async () => {
     const firingId = lastFiredAlarmIdRef.current;
 
-    // Cancel the native alarm on Android — this stops the service and cancels the scheduled alarm
+    // On Android — cancel the native alarm (stops the service and cancels scheduled alarm)
     if (Platform.OS === 'android' && ExpoAlarm && firingId) {
       try {
         await ExpoAlarm.cancelAlarmAsync(firingId);
       } catch (e) {
         console.error('Failed to cancel alarm on dismiss:', e);
+      }
+    }
+
+    // On iOS — the alarm fires via notification, stop the firing state
+    if (Platform.OS === 'ios') {
+      setIsAlarmFiring(false);
+      lastFiredAlarmIdRef.current = null;
+
+      // Cancel the scheduled notification so it doesn't fire again today
+      // The alarm itself stays enabled for future days
+      if (firingId) {
+        try {
+          await Notifications.cancelScheduledNotificationAsync(firingId);
+        } catch (e) {
+          console.error('Failed to cancel notification on dismiss:', e);
+        }
       }
     }
   };
@@ -169,10 +185,22 @@ export function AlarmProvider({ children }: { children: React.ReactNode }) {
 
           // Re-schedule alarms
           for (const alarm of parsedAlarms) {
+            console.log('Re-scheduling alarm:', alarm.id, 'enabled:', alarm.isEnabled, 'time:', alarm.time.toISOString());
             if (alarm.isEnabled) {
+              if (Platform.OS === 'ios') {
+                // Ensure permissions before scheduling
+                const { status } = await Notifications.getPermissionsAsync();
+                console.log('iOS permissions:', status);
+                if (status !== 'granted') {
+                  const { status: newStatus } = await Notifications.requestPermissionsAsync();
+                  console.log('iOS new permissions:', newStatus);
+                }
+              }
               if (Platform.OS === 'android') {
                 await scheduleNativeAlarm(alarm);
               } else {
+                // Cancel old pending notification before re-scheduling
+                await Notifications.cancelScheduledNotificationAsync(alarm.id);
                 await scheduleNotificationAlarm(alarm);
               }
             }
@@ -220,6 +248,7 @@ export function AlarmProvider({ children }: { children: React.ReactNode }) {
 
   const scheduleNotificationAlarm = async (alarm: Alarm) => {
     const nextTrigger = getNextTriggerDate(alarm.time);
+    console.log('Scheduling notification alarm:', alarm.id, 'for', nextTrigger.toISOString(), '(now:', new Date().toISOString(), ')');
     try {
       await Notifications.scheduleNotificationAsync({
         identifier: alarm.id,
@@ -227,21 +256,32 @@ export function AlarmProvider({ children }: { children: React.ReactNode }) {
           title: "⏰ CALarM!",
           body: alarm.label || "Wake up!",
           sound: 'alarm.caf',
-          priority: Notifications.AndroidNotificationPriority.MAX,
           categoryIdentifier: 'alarm',
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DATE,
           date: nextTrigger,
-          channelId: ALARM_CHANNEL_ID,
         },
       });
+      console.log('Notification scheduled successfully');
     } catch (e) {
       console.error('Failed to schedule notification alarm:', e);
     }
   };
 
   const addAlarm = async (time: Date, daysOfWeek: number[] = [], label?: string, sunriseSettings?: SunriseSettings) => {
+    // Request notification permissions on iOS
+    if (Platform.OS === 'ios') {
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== 'granted') {
+        const { status: newStatus } = await Notifications.requestPermissionsAsync();
+        if (newStatus !== 'granted') {
+          console.error('Notification permissions not granted');
+          return;
+        }
+      }
+    }
+
     const newAlarm: Alarm = {
       id: Math.random().toString(36).substring(7),
       time,
