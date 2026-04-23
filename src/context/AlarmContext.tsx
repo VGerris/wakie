@@ -226,7 +226,7 @@ export function AlarmProvider({ children }: { children: React.ReactNode }) {
         content: {
           title: "⏰ CALarM!",
           body: alarm.label || "Wake up!",
-          sound: require('../../assets/sounds/alarm.mp3'),
+          sound: 'alarm.caf',
           priority: Notifications.AndroidNotificationPriority.MAX,
           categoryIdentifier: 'alarm',
         },

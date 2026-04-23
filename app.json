@@ -24,6 +24,12 @@
           "audio",
           "fetch"
         ]
+      },
+      "notifications": {
+        "icon": "./assets/icon.png",
+        "sounds": [
+          "./assets/sounds/alarm.caf"
+        ]
       }
     },
     "android": {
@@ -46,7 +52,10 @@
         {
           "enableBackgroundPlayback" : true
         }
-      ]
+      ],
+      ["expo-notifications", {
+        "sounds": ["./assets/sounds/alarm.caf"]
+      }]
     ]
   }
 }

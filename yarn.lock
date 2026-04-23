@@ -2155,16 +2155,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vgerris/expo-alarm@git+https://github.com/VGerris/expo-alarm.git#commit=2c5f63220b2fff85abc995a94b34f88a578dd872":
+"@vgerris/expo-alarm@git+https://github.com/VGerris/expo-alarm.git#commit=357fe82a630cef76dd2145c50684602d4f99e477":
   version: 0.1.6
-  resolution: "@vgerris/expo-alarm@https://github.com/VGerris/expo-alarm.git#commit=2c5f63220b2fff85abc995a94b34f88a578dd872"
+  resolution: "@vgerris/expo-alarm@https://github.com/VGerris/expo-alarm.git#commit=357fe82a630cef76dd2145c50684602d4f99e477"
   dependencies:
     typescript: "npm:^5.9.2"
   peerDependencies:
     expo: "*"
     react: "*"
     react-native: "*"
-  checksum: 10c0/577b3d8e92b622f6ec190f9d4cf085c2e711bce21613c6609872eba87d96ceffda8848535e4ddfda5f71159c7bae3d81e19343dae734d5360a31c71638b0a3a7
+  checksum: 10c0/1ca2b29e7da8b2acc4bc0dc02db339ec9a6fb8c18cf720a08120604ee67c2e919e220859b528bb4c7417e4be22fac9f1e8f69ffdd9c488665b5f600695fc8811
   languageName: node
   linkType: hard
 
@@ -2679,7 +2679,7 @@ __metadata:
     "@react-native-community/datetimepicker": "npm:8.6.0"
     "@types/react": "npm:~19.2.10"
     "@types/react-dom": "npm:~19.1.7"
-    "@vgerris/expo-alarm": "git+https://github.com/VGerris/expo-alarm.git#commit=2c5f63220b2fff85abc995a94b34f88a578dd872"
+    "@vgerris/expo-alarm": "git+https://github.com/VGerris/expo-alarm.git#commit=357fe82a630cef76dd2145c50684602d4f99e477"
     expo: "npm:^55.0.0"
     expo-asset: "npm:~55.0.16"
     expo-audio: "npm:^55.0.14"
