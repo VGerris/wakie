@@ -205,11 +205,12 @@ export function AlarmProvider({ children }: { children: React.ReactNode }) {
   const scheduleNativeAlarm = async (alarm: Alarm) => {
     if (!ExpoAlarm) return;
     try {
+      const triggerDate = getNextTriggerDate(alarm.time);
       await ExpoAlarm.scheduleAlarmAsync({
         identifier: alarm.id,
         title: alarm.label || 'Wake up!',
         body: '⏰ CALarM!',
-        date: alarm.time.getTime(),
+        date: triggerDate.getTime(),
         repeating: alarm.daysOfWeek.length > 0,
       });
     } catch (e) {

@@ -31,6 +31,7 @@ export async function playAlarmSound() {
 export async function stopAlarmSound(player: AudioPlayer | null) {
   if (player) {
     try {
+      await player.seekTo(0);
       player.pause();
       player.remove();
     } catch (error) {
