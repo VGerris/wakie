@@ -1,0 +1,56 @@
+node_modules/**/*
+.expo/*
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# macOS
+.DS_Store
+ios
+android
+.vscode
+*.log
+
+# Expo
+.expo
+
+# mobile apps
+*.apk
+*.aab
+*.ipa
+node_modules
+
+# Hermes ?
+derived_data
+
+# Xcode / iOS Build
+DerivedData/
+Build/
+Intermediates.noindex/
+*.xcworkspace/
+xcuserdata/
+*.xcodeproj/project.xcworkspace
+*.xcodeproj/xcuserdata
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+# React Native / Expo
+*.jsbundle
+*.hbc
+.nyc_output
+.coverage
+
+# Large binaries (never commit these)
+*.a
+*.framework
+*.dylib
+*.dSYM
+*.ipa
+*.xcarchive

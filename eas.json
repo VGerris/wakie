@@ -1,0 +1,52 @@
+{
+    "cli": {
+      "version": ">= 5.9.3",
+      "appVersionSource": "local"
+    },
+    "build": {
+      "development": {
+        "releaseChannel": "development",
+        "developmentClient": true,
+        "distribution": "internal",
+        "env": {
+        "NODE_ENV": "development"
+       },
+        "android": {
+          "buildType": "apk"
+        },
+        "ios": {
+          "simulator": false
+        }
+      },
+      "preview": {
+        "android": {
+          "buildType": "apk"
+        }
+      },
+      "preview2": {
+        "distribution": "store",
+        "env": {
+          "NODE_ENV": "production"},
+        "android": {
+          "buildType": "apk"
+        },
+        //"developmentClient": true - will build Expo based build
+      },
+      "preview3": {
+        "developmentClient": true,
+        "env": {
+          "APP_VARIANT": "development"
+        }
+      },
+      "preview4": {
+        "distribution": "internal"
+      },
+      "production": {
+        "distribution": "store",
+        "env": {
+          "NODE_ENV": "production"
+        }
+      }
+    }
+  }
+  
